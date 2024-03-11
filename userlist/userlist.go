@@ -38,6 +38,7 @@ type Enterprise struct {
 type User struct {
 	Number        int            `json:"Number"`
 	Login         string         `json:"Login"`
+	Name          string         `json:"Name"`
 	Email         string         `json:"Email"`
 	Organizations []Organization `json:"Organizations"`
 }
@@ -140,6 +141,7 @@ func (c *UserListConfig) Load() error {
 							Node struct {
 								User struct {
 									Login         string
+									Name          string
 									Organizations struct {
 										Nodes []struct {
 											Name string
@@ -179,6 +181,7 @@ func (c *UserListConfig) Load() error {
 			u := User{
 				Number: offset + i + 1,
 				Login:  e.Node.User.Login,
+				Name:   e.Node.User.Name,
 				Email:  e.Node.SamlIdentity.NameId,
 			}
 			for _, o := range e.Node.User.Organizations.Nodes {
