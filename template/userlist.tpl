@@ -2,9 +2,9 @@
 
 Last updated: {{ .Updated }}
 
-| # | GitHub Login | E-Mail |
+| # | GitHub Login | GitHub name | E-Mail |
 | --- | --- | --- |
-{{ range .Users }} | {{ .Number }} | [{{ .Login }}](https://github.com/enterprises/{{ $.Enterprise.Slug }}/people/{{ .Login }}/sso) | {{ .Email }} |
+{{ range .Users }} | {{ .Number }} | [{{ .Login }}](https://github.com/enterprises/{{ $.Enterprise.Slug }}/people/{{ .Login }}/sso) | {{ .Name }} | {{ .Email }} |
 {{end}}
 ---
 Generated with :heart: by [github-users](https://github.com/prodyna/github-users)
