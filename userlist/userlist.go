@@ -152,32 +152,41 @@ func (c *UserListConfig) Load() error {
 		} `graphql:"enterprise(slug: $slug)"`
 	}
 
+	window := 100
 	variables := map[string]interface{}{
 		"slug":  githubv4.String("prodyna"),
-		"first": githubv4.Int(100),
+		"first": githubv4.Int(window),
 		"after": (*githubv4.String)(nil),
 	}
 
-	err := client.Query(ctx, &query, variables)
-	if err != nil {
-		slog.ErrorContext(ctx, "Unable to query", "error", err)
-	}
-
-	c.userList.Enterprise = Enterprise{
-		Slug: query.Enterprise.Slug,
-		Name: query.Enterprise.Name,
-	}
-
-	for i, e := range query.Enterprise.OwnerInfo.SamlIdentityProvider.ExternalIdentities.Edges {
-		u := User{
-			Number: i + 1,
-			Login:  e.Node.User.Login,
-			Email:  e.Node.SamlIdentity.NameId,
+	for offset := 0; ; offset += window {
+		err := client.Query(ctx, &query, variables)
+		if err != nil {
+			slog.ErrorContext(ctx, "Unable to query", "error", err)
 		}
-		for _, o := range e.Node.User.Organizations.Nodes {
-			u.Organizations = append(u.Organizations, Organization{Name: o.Name})
+
+		c.userList.Enterprise = Enterprise{
+			Slug: query.Enterprise.Slug,
+			Name: query.Enterprise.Name,
 		}
-		c.userList.Users = append(c.userList.Users, u)
+
+		for i, e := range query.Enterprise.OwnerInfo.SamlIdentityProvider.ExternalIdentities.Edges {
+			u := User{
+				Number: offset + i + 1,
+				Login:  e.Node.User.Login,
+				Email:  e.Node.SamlIdentity.NameId,
+			}
+			for _, o := range e.Node.User.Organizations.Nodes {
+				u.Organizations = append(u.Organizations, Organization{Name: o.Name})
+			}
+			c.userList.Users = append(c.userList.Users, u)
+		}
+
+		if !query.Enterprise.OwnerInfo.SamlIdentityProvider.ExternalIdentities.PageInfo.HasNextPage {
+			break
+		}
+
+		variables["after"] = githubv4.NewString(query.Enterprise.OwnerInfo.SamlIdentityProvider.ExternalIdentities.PageInfo.EndCursor)
 	}
 
 	slog.InfoContext(ctx, "Loaded userlist", "users", len(c.userList.Users))
