@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"os"
 	"text/template"
+	"time"
 )
 
 type UserListConfig struct {
@@ -24,6 +25,7 @@ type UserListConfig struct {
 }
 
 type UserList struct {
+	Updated    string
 	Enterprise Enterprise
 	Users      []User
 }
@@ -111,7 +113,10 @@ func (c *UserListConfig) Load() error {
 		return errors.New("Config not validated")
 	}
 	slog.Info("Loading userlist", "enterprise", c.enterprise)
-	c.userList = &UserList{}
+	c.userList = &UserList{
+		// updated as RFC3339 string
+		Updated: time.Now().Format(time.RFC3339),
+	}
 
 	ctx := context.Background()
 	src := oauth2.StaticTokenSource(
