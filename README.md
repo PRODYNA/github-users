@@ -44,7 +44,7 @@ jobs:
 
       # Run the deployment overview action
       - name: Github users
-        uses: prodyna/github-users@v0.1
+        uses: prodyna/github-users@v0.2
         with:
           # The action to run
           action: userlist
