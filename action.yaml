@@ -1,0 +1,35 @@
+name: 'GitHub Users'
+description: 'GitHub Action that creates list of enterprise users or allows automatic invitation of users'
+author: darko.krizic@prodyna.com
+inputs:
+  action:
+    description: 'The action to perform, currently supported: userlist'
+    required: true
+  enterprise:
+    description: 'The GitHub Enterprise to query for repositories'
+    required: true
+  github-token:
+    description: 'The GitHub Token to use for authentication'
+    required: true
+  template-file:
+    description: 'The template file to use for rendering the result'
+    required: false
+    default: '/template/userlist.tpl'
+  markdown-file:
+    description: 'The markdown file to write the result to'
+    required: false
+    default: 'USERS.md'
+  verbose:
+    description: 'The verbosity level'
+    required: false
+    default: 1
+runs:
+  using: 'docker'
+  image: 'docker://ghcr.io/prodyna/github-users:v0.1'
+  env:
+    ACTION: ${{ inputs.action }}
+    ENTERPRISE: ${{ inputs.enterprise }}
+    GITHUB_TOKEN: ${{ inputs.github-token }}
+    TEMPLATE_FILE: ${{ inputs.template-file }}
+    MARKDOWN_FILE: ${{ inputs.markdown-file }}
+    VERBOSE: ${{ inputs.verbose }}

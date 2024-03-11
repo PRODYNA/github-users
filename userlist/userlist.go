@@ -24,7 +24,13 @@ type UserListConfig struct {
 }
 
 type UserList struct {
-	Users []User
+	Enterprise Enterprise
+	Users      []User
+}
+
+type Enterprise struct {
+	Slug string
+	Name string
 }
 
 type User struct {
@@ -155,6 +161,11 @@ func (c *UserListConfig) Load() error {
 	err := client.Query(ctx, &query, variables)
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to query", "error", err)
+	}
+
+	c.userList.Enterprise = Enterprise{
+		Slug: query.Enterprise.Slug,
+		Name: query.Enterprise.Name,
 	}
 
 	for i, e := range query.Enterprise.OwnerInfo.SamlIdentityProvider.ExternalIdentities.Edges {
