@@ -36,11 +36,11 @@ type Enterprise struct {
 }
 
 type User struct {
-	Number        int            `json:"Number"`
-	Login         string         `json:"Login"`
-	Name          string         `json:"Name"`
-	Email         string         `json:"Email"`
-	Organizations []Organization `json:"Organizations"`
+	Number        int    `json:"Number"`
+	Login         string `json:"Login"`
+	Name          string `json:"Name"`
+	Email         string `json:"Email"`
+	Contributions int    `json:"Contributions"`
 }
 
 type Organization struct {
@@ -140,13 +140,13 @@ func (c *UserListConfig) Load() error {
 						Edges []struct {
 							Node struct {
 								User struct {
-									Login         string
-									Name          string
-									Organizations struct {
-										Nodes []struct {
-											Name string
+									Login                   string
+									Name                    string
+									ContributionsCollection struct {
+										ContributionCalendar struct {
+											TotalContributions int
 										}
-									} `graphql:"organizations(first: 10)"`
+									}
 								}
 								SamlIdentity struct {
 									NameId string
@@ -179,13 +179,11 @@ func (c *UserListConfig) Load() error {
 
 		for i, e := range query.Enterprise.OwnerInfo.SamlIdentityProvider.ExternalIdentities.Edges {
 			u := User{
-				Number: offset + i + 1,
-				Login:  e.Node.User.Login,
-				Name:   e.Node.User.Name,
-				Email:  e.Node.SamlIdentity.NameId,
-			}
-			for _, o := range e.Node.User.Organizations.Nodes {
-				u.Organizations = append(u.Organizations, Organization{Name: o.Name})
+				Number:        offset + i + 1,
+				Login:         e.Node.User.Login,
+				Name:          e.Node.User.Name,
+				Email:         e.Node.SamlIdentity.NameId,
+				Contributions: e.Node.User.ContributionsCollection.ContributionCalendar.TotalContributions,
 			}
 			c.userList.Users = append(c.userList.Users, u)
 		}
