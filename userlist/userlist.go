@@ -6,12 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/shurcooL/githubv4"
-	"golang.org/x/oauth2"
 	"log/slog"
 	"os"
 	"text/template"
-	"time"
 )
 
 const (
@@ -25,9 +22,9 @@ type UserListConfig struct {
 	markdownFile string
 	enterprise   string
 	githubToken  string
-	userList     *UserList
 	validated    bool
 	loaded       bool
+	userList     *UserList
 }
 
 type UserList struct {
@@ -51,47 +48,6 @@ type User struct {
 
 type Organization struct {
 	Name string `json:"Name"`
-}
-
-func New(options ...func(*UserListConfig)) *UserListConfig {
-	config := &UserListConfig{
-		validated: false,
-		loaded:    false,
-	}
-	for _, option := range options {
-		option(config)
-	}
-	return config
-}
-
-func WithAction(action string) func(*UserListConfig) {
-	return func(config *UserListConfig) {
-		config.action = action
-	}
-}
-
-func WithTemplateFile(templateFile string) func(*UserListConfig) {
-	return func(config *UserListConfig) {
-		config.templateFile = templateFile
-	}
-}
-
-func WithEnterprise(enterprise string) func(*UserListConfig) {
-	return func(config *UserListConfig) {
-		config.enterprise = enterprise
-	}
-}
-
-func WithGithubToken(githubToken string) func(*UserListConfig) {
-	return func(config *UserListConfig) {
-		config.githubToken = githubToken
-	}
-}
-
-func WithMarkdownFile(markdownFile string) func(*UserListConfig) {
-	return func(config *UserListConfig) {
-		config.markdownFile = markdownFile
-	}
 }
 
 func (c *UserListConfig) Validate() error {
@@ -128,99 +84,10 @@ func (c *UserListConfig) Load() error {
 	case members:
 		return c.loadMembers()
 	case collaborators:
-		return errors.New("Not implemented")
+		return c.loadCollaborators()
 	default:
-		return errors.New("Unknown action")
+		return errors.New(fmt.Sprintf("Unknown action %s", c.action))
 	}
-}
-
-func (c *UserListConfig) loadMembers() error {
-	slog.Info("Loading members", "enterprise", c.enterprise)
-	c.userList = &UserList{
-		// updated as RFC3339 string
-		Updated: time.Now().Format(time.RFC3339),
-	}
-
-	ctx := context.Background()
-	src := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: c.githubToken},
-	)
-	httpClient := oauth2.NewClient(ctx, src)
-	client := githubv4.NewClient(httpClient)
-
-	var query struct {
-		Enterprise struct {
-			Slug      string
-			Name      string
-			OwnerInfo struct {
-				SamlIdentityProvider struct {
-					ExternalIdentities struct {
-						PageInfo struct {
-							HasNextPage bool
-							EndCursor   githubv4.String
-						}
-						Edges []struct {
-							Node struct {
-								User struct {
-									Login                   string
-									Name                    string
-									ContributionsCollection struct {
-										ContributionCalendar struct {
-											TotalContributions int
-										}
-									}
-								}
-								SamlIdentity struct {
-									NameId string
-								}
-							}
-						}
-					} `graphql:"externalIdentities(after: $after, first: $first)"`
-				}
-			}
-		} `graphql:"enterprise(slug: $slug)"`
-	}
-
-	window := 100
-	variables := map[string]interface{}{
-		"slug":  githubv4.String("prodyna"),
-		"first": githubv4.Int(window),
-		"after": (*githubv4.String)(nil),
-	}
-
-	for offset := 0; ; offset += window {
-		slog.Debug("Running query", "offset", offset, "window", window)
-		err := client.Query(ctx, &query, variables)
-		if err != nil {
-			slog.ErrorContext(ctx, "Unable to query", "error", err)
-		}
-
-		c.userList.Enterprise = Enterprise{
-			Slug: query.Enterprise.Slug,
-			Name: query.Enterprise.Name,
-		}
-
-		for i, e := range query.Enterprise.OwnerInfo.SamlIdentityProvider.ExternalIdentities.Edges {
-			u := User{
-				Number:        offset + i + 1,
-				Login:         e.Node.User.Login,
-				Name:          e.Node.User.Name,
-				Email:         e.Node.SamlIdentity.NameId,
-				Contributions: e.Node.User.ContributionsCollection.ContributionCalendar.TotalContributions,
-			}
-			c.userList.Users = append(c.userList.Users, u)
-		}
-
-		if !query.Enterprise.OwnerInfo.SamlIdentityProvider.ExternalIdentities.PageInfo.HasNextPage {
-			break
-		}
-
-		variables["after"] = githubv4.NewString(query.Enterprise.OwnerInfo.SamlIdentityProvider.ExternalIdentities.PageInfo.EndCursor)
-	}
-
-	slog.InfoContext(ctx, "Loaded userlist", "users", len(c.userList.Users))
-	c.loaded = true
-	return nil
 }
 
 func (c *UserListConfig) Print() error {
