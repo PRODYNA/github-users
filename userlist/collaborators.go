@@ -2,6 +2,8 @@ package userlist
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
 	"log/slog"
@@ -98,8 +100,13 @@ func (c *UserListConfig) loadCollaborators() error {
 						Name          string
 						Collaborators struct {
 							Nodes []struct {
-								Login string
-								Name  string
+								Login                   string
+								Name                    string
+								ContributionsCollection struct {
+									ContributionCalendar struct {
+										TotalContributions int
+									}
+								}
 							}
 						} `graphql:"collaborators(first:100,affiliation:OUTSIDE)"`
 					}
@@ -131,6 +138,13 @@ func (c *UserListConfig) loadCollaborators() error {
 		if collaboratorCount == 0 {
 			continue
 		}
+
+		output, err := json.MarshalIndent(repositories, "", "  ")
+		if err != nil {
+			slog.ErrorContext(ctx, "Unable to marshal json", "error", err)
+			return err
+		}
+		fmt.Printf("%s\n", output)
 
 		slog.InfoContext(ctx, "Adding collaborators", "organization", org.Login)
 	}

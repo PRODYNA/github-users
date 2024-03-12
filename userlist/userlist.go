@@ -44,9 +44,15 @@ type User struct {
 	Name          string `json:"Name"`
 	Email         string `json:"Email"`
 	Contributions int    `json:"Contributions"`
+	Organizations []Organization
 }
 
 type Organization struct {
+	Name         string       `json:"Name"`
+	Repositories []Repository `json:"Repositories"`
+}
+
+type Repository struct {
 	Name string `json:"Name"`
 }
 
@@ -143,4 +149,34 @@ func (organization *Organization) RenderMarkdown(ctx context.Context, templateCo
 		return "", err
 	}
 	return buffer.String(), nil
+}
+
+func (ul *UserList) upsertUser(user User) {
+	for i, u := range ul.Users {
+		if u.Login == user.Login {
+			ul.Users[i] = user
+			return
+		}
+	}
+	ul.Users = append(ul.Users, user)
+}
+
+func (u *User) upsertOrganization(org Organization) {
+	for i, o := range u.Organizations {
+		if o.Name == org.Name {
+			u.Organizations[i] = org
+			return
+		}
+	}
+	u.Organizations = append(u.Organizations, org)
+}
+
+func (o *Organization) upsertRepository(repo Repository) {
+	for i, r := range o.Repositories {
+		if r.Name == repo.Name {
+			o.Repositories[i] = repo
+			return
+		}
+	}
+	o.Repositories = append(o.Repositories, repo)
 }

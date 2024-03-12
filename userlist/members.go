@@ -82,7 +82,7 @@ func (c *UserListConfig) loadMembers() error {
 				Email:         e.Node.SamlIdentity.NameId,
 				Contributions: e.Node.User.ContributionsCollection.ContributionCalendar.TotalContributions,
 			}
-			c.userList.Users = append(c.userList.Users, u)
+			c.userList.upsertUser(u)
 		}
 
 		if !query.Enterprise.OwnerInfo.SamlIdentityProvider.ExternalIdentities.PageInfo.HasNextPage {
