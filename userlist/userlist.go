@@ -15,6 +15,7 @@ import (
 )
 
 type UserListConfig struct {
+	action       string
 	templateFile string
 	markdownFile string
 	enterprise   string
@@ -58,8 +59,9 @@ func New(options ...func(*UserListConfig)) *UserListConfig {
 	return config
 }
 
-func WithClient() func(*UserListConfig) {
+func WithAction(action string) func(*UserListConfig) {
 	return func(config *UserListConfig) {
+		config.action = action
 	}
 }
 
@@ -88,6 +90,9 @@ func WithMarkdownFile(markdownFile string) func(*UserListConfig) {
 }
 
 func (c *UserListConfig) Validate() error {
+	if c.action == "" {
+		return errors.New("Action is required")
+	}
 	if c.templateFile == "" {
 		return errors.New("Template is required")
 	}

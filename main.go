@@ -1,7 +1,7 @@
 package main
 
 import (
-	config2 "github.com/prodyna/github-users/config"
+	config "github.com/prodyna/github-users/config"
 	"github.com/prodyna/github-users/userlist"
 	"log/slog"
 	"os"
@@ -22,42 +22,38 @@ type Config struct {
 }
 
 func main() {
-	config, err := config2.New()
+	c, err := config.New()
 	if err != nil {
 		slog.Error("Unable to create config", "error", err)
 		os.Exit(1)
 	}
 
-	switch config.Action {
-	case "userlist":
-		ulc := userlist.New(
-			userlist.WithEnterprise(config.Enterprise),
-			userlist.WithGithubToken(config.GithubToken),
-			userlist.WithTemplateFile(config.TemplateFile),
-			userlist.WithMarkdownFile(config.MarkdownFile),
-		)
-		err := ulc.Validate()
-		if err != nil {
-			slog.Error("Invalid config", "error", err)
-			os.Exit(1)
-		}
-		err = ulc.Load()
-		if err != nil {
-			slog.Error("Unable to load userlist", "error", err)
-			os.Exit(1)
-		}
-		err = ulc.Print()
-		if err != nil {
-			slog.Error("Unable to print userlist", "error", err)
-			os.Exit(1)
-		}
-		err = ulc.Render()
-		if err != nil {
-			slog.Error("Unable to render userlist", "error", err)
-			os.Exit(1)
-		}
-	default:
-		slog.Error("Unknown action", "action", config.Action)
+	ulc := userlist.New(
+		userlist.WithAction(c.Action),
+		userlist.WithEnterprise(c.Enterprise),
+		userlist.WithGithubToken(c.GithubToken),
+		userlist.WithTemplateFile(c.TemplateFile),
+		userlist.WithMarkdownFile(c.MarkdownFile),
+	)
+
+	err = ulc.Validate()
+	if err != nil {
+		slog.Error("Invalid config", "error", err)
+		os.Exit(1)
+	}
+	err = ulc.Load()
+	if err != nil {
+		slog.Error("Unable to load userlist", "error", err)
+		os.Exit(1)
+	}
+	err = ulc.Print()
+	if err != nil {
+		slog.Error("Unable to print userlist", "error", err)
+		os.Exit(1)
+	}
+	err = ulc.Render()
+	if err != nil {
+		slog.Error("Unable to render userlist", "error", err)
 		os.Exit(1)
 	}
 }
