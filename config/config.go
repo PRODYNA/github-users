@@ -34,14 +34,13 @@ func New() (*Config, error) {
 	flag.StringVar(&c.MarkdownFile, keyMarkdownFile, lookupEnvOrString("MARKDOWN_FILE", "USERS.md"), "The markdown file to write the result to.")
 	verbose := flag.Int("verbose", lookupEnvOrInt(keyVerbose, 0), "Verbosity level, 0=info, 1=debug. Overrides the environment variable VERBOSE.")
 
-	logLevel := &slog.LevelVar{}
-	if verbose != nil {
-		if *verbose == 0 {
-			logLevel.Set(slog.LevelInfo)
-		} else {
-			logLevel.Set(slog.LevelDebug)
-		}
+	level := slog.LevelInfo
+	if *verbose > 0 {
+		level = slog.LevelDebug
 	}
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: level,
+	})))
 	flag.Parse()
 	return &c, nil
 }

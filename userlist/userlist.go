@@ -14,6 +14,11 @@ import (
 	"time"
 )
 
+const (
+	members       = "members"
+	collaborators = "collaborators"
+)
+
 type UserListConfig struct {
 	action       string
 	templateFile string
@@ -107,6 +112,7 @@ func (c *UserListConfig) Validate() error {
 	}
 	c.validated = true
 	slog.Debug("Validated userlist",
+		"action", c.action,
 		"enterprise", c.enterprise,
 		"template", c.templateFile,
 		"githubToken", "***",
@@ -118,7 +124,18 @@ func (c *UserListConfig) Load() error {
 	if !c.validated {
 		return errors.New("Config not validated")
 	}
-	slog.Info("Loading userlist", "enterprise", c.enterprise)
+	switch c.action {
+	case members:
+		return c.loadMembers()
+	case collaborators:
+		return errors.New("Not implemented")
+	default:
+		return errors.New("Unknown action")
+	}
+}
+
+func (c *UserListConfig) loadMembers() error {
+	slog.Info("Loading members", "enterprise", c.enterprise)
 	c.userList = &UserList{
 		// updated as RFC3339 string
 		Updated: time.Now().Format(time.RFC3339),
@@ -172,6 +189,7 @@ func (c *UserListConfig) Load() error {
 	}
 
 	for offset := 0; ; offset += window {
+		slog.Debug("Running query", "offset", offset, "window", window)
 		err := client.Query(ctx, &query, variables)
 		if err != nil {
 			slog.ErrorContext(ctx, "Unable to query", "error", err)
