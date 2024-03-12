@@ -24,13 +24,13 @@ type UserListConfig struct {
 	githubToken  string
 	validated    bool
 	loaded       bool
-	userList     *UserList
+	userList     UserList
 }
 
 type UserList struct {
 	Updated    string
 	Enterprise Enterprise
-	Users      []User
+	Users      []*User
 }
 
 type Enterprise struct {
@@ -44,12 +44,12 @@ type User struct {
 	Name          string `json:"Name"`
 	Email         string `json:"Email"`
 	Contributions int    `json:"Contributions"`
-	Organizations []Organization
+	Organizations *[]Organization
 }
 
 type Organization struct {
-	Name         string       `json:"Name"`
-	Repositories []Repository `json:"Repositories"`
+	Name         string        `json:"Name"`
+	Repositories *[]Repository `json:"Repositories"`
 }
 
 type Repository struct {
@@ -154,29 +154,32 @@ func (organization *Organization) RenderMarkdown(ctx context.Context, templateCo
 func (ul *UserList) upsertUser(user User) {
 	for i, u := range ul.Users {
 		if u.Login == user.Login {
-			ul.Users[i] = user
+			*ul.Users[i] = user
 			return
 		}
 	}
-	ul.Users = append(ul.Users, user)
+	slog.Info("Upserting user", "login", user.Login)
+	ul.Users = append(ul.Users, &user)
 }
 
 func (u *User) upsertOrganization(org Organization) {
-	for i, o := range u.Organizations {
-		if o.Name == org.Name {
-			u.Organizations[i] = org
-			return
-		}
-	}
-	u.Organizations = append(u.Organizations, org)
+	//for i, o := range u.Organizations {
+	//	if o.Name == org.Name {
+	//		u.Organizations[i] = org
+	//		return
+	//	}
+	//}
+	*u.Organizations = append(*u.Organizations, org)
+	slog.Debug("Upserting organization", "name", org.Name, "user", u.Login)
 }
 
 func (o *Organization) upsertRepository(repo Repository) {
-	for i, r := range o.Repositories {
-		if r.Name == repo.Name {
-			o.Repositories[i] = repo
-			return
-		}
-	}
-	o.Repositories = append(o.Repositories, repo)
+	//for i, r := range o.Repositories {
+	//	if r.Name == repo.Name {
+	//		o.Repositories[i] = repo
+	//		return
+	//	}
+	//}
+	slog.Debug("Upserting repository", "name", repo.Name, "organization", o.Name)
+	*o.Repositories = append(*o.Repositories, repo)
 }

@@ -10,7 +10,7 @@ import (
 
 func (c *UserListConfig) loadMembers() error {
 	slog.Info("Loading members", "enterprise", c.enterprise)
-	c.userList = &UserList{
+	c.userList = UserList{
 		// updated as RFC3339 string
 		Updated: time.Now().Format(time.RFC3339),
 	}

@@ -12,7 +12,7 @@ import (
 
 func (c *UserListConfig) loadCollaborators() error {
 	slog.Info("Loading collaborators", "enterprise", c.enterprise)
-	c.userList = &UserList{
+	c.userList = UserList{
 		// updated as RFC3339 string
 		Updated: time.Now().Format(time.RFC3339),
 	}
@@ -87,13 +87,16 @@ func (c *UserListConfig) loadCollaborators() error {
 		  }
 		}
 	*/
+	c.userList.Enterprise.Slug = organizations.Enterprise.Slug
+	c.userList.Enterprise.Name = organizations.Enterprise.Name
+
 	slog.Info("Iterating organizatons", "organization.count", len(organizations.Enterprise.Organizations.Nodes))
 	for _, org := range organizations.Enterprise.Organizations.Nodes {
 		if org.Login != "PRODYNA" {
 			continue
 		}
 		slog.Info("Loading repositories and external collaborators", "organization", org.Login)
-		var repositories struct {
+		var query struct {
 			Organization struct {
 				Repositories struct {
 					Nodes []struct {
@@ -118,7 +121,7 @@ func (c *UserListConfig) loadCollaborators() error {
 			"organization": githubv4.String(org.Login),
 		}
 
-		err := client.Query(ctx, &repositories, variables)
+		err := client.Query(ctx, &query, variables)
 		if err != nil {
 			slog.WarnContext(ctx, "Unable to query - will skip this organization", "error", err, "organization", org.Login)
 			continue
@@ -126,12 +129,39 @@ func (c *UserListConfig) loadCollaborators() error {
 
 		// count the collaborators
 		collaboratorCount := 0
-		for _, repo := range repositories.Organization.Repositories.Nodes {
+		for _, repo := range query.Organization.Repositories.Nodes {
 			collaboratorCount += len(repo.Collaborators.Nodes)
+		}
+		if collaboratorCount == 0 {
+			slog.DebugContext(ctx, "No collaborators found", "organization", org.Login)
+			continue
+		}
+
+		for _, repo := range query.Organization.Repositories.Nodes {
+			slog.DebugContext(ctx, "Processing repository", "repository", repo.Name, "collaborator.count", len(repo.Collaborators.Nodes))
+			for _, collaborator := range repo.Collaborators.Nodes {
+				slog.DebugContext(ctx, "Processing collaborator", "login", collaborator.Login, "name", collaborator.Name, "contributions", collaborator.ContributionsCollection.ContributionCalendar.TotalContributions)
+				user := User{
+					Login:         collaborator.Login,
+					Name:          collaborator.Name,
+					Organizations: new([]Organization),
+					Contributions: collaborator.ContributionsCollection.ContributionCalendar.TotalContributions,
+				}
+				c.userList.upsertUser(user)
+				organization := Organization{
+					Name:         repo.Name,
+					Repositories: new([]Repository),
+				}
+				user.upsertOrganization(organization)
+				repository := Repository{
+					Name: repo.Name,
+				}
+				organization.upsertRepository(repository)
+			}
 		}
 
 		slog.InfoContext(ctx, "Loaded repositories",
-			"repository.count", len(repositories.Organization.Repositories.Nodes),
+			"repository.count", len(query.Organization.Repositories.Nodes),
 			"organization", org.Login,
 			"collaborator.count", collaboratorCount)
 
@@ -139,7 +169,7 @@ func (c *UserListConfig) loadCollaborators() error {
 			continue
 		}
 
-		output, err := json.MarshalIndent(repositories, "", "  ")
+		output, err := json.MarshalIndent(c.userList, "", "  ")
 		if err != nil {
 			slog.ErrorContext(ctx, "Unable to marshal json", "error", err)
 			return err
@@ -149,5 +179,6 @@ func (c *UserListConfig) loadCollaborators() error {
 		slog.InfoContext(ctx, "Adding collaborators", "organization", org.Login)
 	}
 
+	c.loaded = true
 	return nil
 }
