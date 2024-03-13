@@ -6,28 +6,31 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/shurcooL/githubv4"
-	"golang.org/x/oauth2"
 	"log/slog"
 	"os"
 	"text/template"
-	"time"
+)
+
+const (
+	members       = "members"
+	collaborators = "collaborators"
 )
 
 type UserListConfig struct {
+	action       string
 	templateFile string
 	markdownFile string
 	enterprise   string
 	githubToken  string
-	userList     *UserList
 	validated    bool
 	loaded       bool
+	userList     UserList
 }
 
 type UserList struct {
 	Updated    string
 	Enterprise Enterprise
-	Users      []User
+	Users      []*User
 }
 
 type Enterprise struct {
@@ -41,53 +44,22 @@ type User struct {
 	Name          string `json:"Name"`
 	Email         string `json:"Email"`
 	Contributions int    `json:"Contributions"`
+	Organizations *[]Organization
 }
 
 type Organization struct {
+	Name         string        `json:"Name"`
+	Repositories *[]Repository `json:"Repositories"`
+}
+
+type Repository struct {
 	Name string `json:"Name"`
 }
 
-func New(options ...func(*UserListConfig)) *UserListConfig {
-	config := &UserListConfig{
-		validated: false,
-		loaded:    false,
-	}
-	for _, option := range options {
-		option(config)
-	}
-	return config
-}
-
-func WithClient() func(*UserListConfig) {
-	return func(config *UserListConfig) {
-	}
-}
-
-func WithTemplateFile(templateFile string) func(*UserListConfig) {
-	return func(config *UserListConfig) {
-		config.templateFile = templateFile
-	}
-}
-
-func WithEnterprise(enterprise string) func(*UserListConfig) {
-	return func(config *UserListConfig) {
-		config.enterprise = enterprise
-	}
-}
-
-func WithGithubToken(githubToken string) func(*UserListConfig) {
-	return func(config *UserListConfig) {
-		config.githubToken = githubToken
-	}
-}
-
-func WithMarkdownFile(markdownFile string) func(*UserListConfig) {
-	return func(config *UserListConfig) {
-		config.markdownFile = markdownFile
-	}
-}
-
 func (c *UserListConfig) Validate() error {
+	if c.action == "" {
+		return errors.New("Action is required")
+	}
 	if c.templateFile == "" {
 		return errors.New("Template is required")
 	}
@@ -102,6 +74,7 @@ func (c *UserListConfig) Validate() error {
 	}
 	c.validated = true
 	slog.Debug("Validated userlist",
+		"action", c.action,
 		"enterprise", c.enterprise,
 		"template", c.templateFile,
 		"githubToken", "***",
@@ -113,91 +86,14 @@ func (c *UserListConfig) Load() error {
 	if !c.validated {
 		return errors.New("Config not validated")
 	}
-	slog.Info("Loading userlist", "enterprise", c.enterprise)
-	c.userList = &UserList{
-		// updated as RFC3339 string
-		Updated: time.Now().Format(time.RFC3339),
+	switch c.action {
+	case members:
+		return c.loadMembers()
+	case collaborators:
+		return c.loadCollaborators()
+	default:
+		return errors.New(fmt.Sprintf("Unknown action %s", c.action))
 	}
-
-	ctx := context.Background()
-	src := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: c.githubToken},
-	)
-	httpClient := oauth2.NewClient(ctx, src)
-	client := githubv4.NewClient(httpClient)
-
-	var query struct {
-		Enterprise struct {
-			Slug      string
-			Name      string
-			OwnerInfo struct {
-				SamlIdentityProvider struct {
-					ExternalIdentities struct {
-						PageInfo struct {
-							HasNextPage bool
-							EndCursor   githubv4.String
-						}
-						Edges []struct {
-							Node struct {
-								User struct {
-									Login                   string
-									Name                    string
-									ContributionsCollection struct {
-										ContributionCalendar struct {
-											TotalContributions int
-										}
-									}
-								}
-								SamlIdentity struct {
-									NameId string
-								}
-							}
-						}
-					} `graphql:"externalIdentities(after: $after, first: $first)"`
-				}
-			}
-		} `graphql:"enterprise(slug: $slug)"`
-	}
-
-	window := 100
-	variables := map[string]interface{}{
-		"slug":  githubv4.String("prodyna"),
-		"first": githubv4.Int(window),
-		"after": (*githubv4.String)(nil),
-	}
-
-	for offset := 0; ; offset += window {
-		err := client.Query(ctx, &query, variables)
-		if err != nil {
-			slog.ErrorContext(ctx, "Unable to query", "error", err)
-		}
-
-		c.userList.Enterprise = Enterprise{
-			Slug: query.Enterprise.Slug,
-			Name: query.Enterprise.Name,
-		}
-
-		for i, e := range query.Enterprise.OwnerInfo.SamlIdentityProvider.ExternalIdentities.Edges {
-			u := User{
-				Number:        offset + i + 1,
-				Login:         e.Node.User.Login,
-				Name:          e.Node.User.Name,
-				Email:         e.Node.SamlIdentity.NameId,
-				Contributions: e.Node.User.ContributionsCollection.ContributionCalendar.TotalContributions,
-			}
-			c.userList.Users = append(c.userList.Users, u)
-		}
-
-		if !query.Enterprise.OwnerInfo.SamlIdentityProvider.ExternalIdentities.PageInfo.HasNextPage {
-			break
-		}
-
-		variables["after"] = githubv4.NewString(query.Enterprise.OwnerInfo.SamlIdentityProvider.ExternalIdentities.PageInfo.EndCursor)
-	}
-
-	slog.InfoContext(ctx, "Loaded userlist", "users", len(c.userList.Users))
-	c.loaded = true
-	return nil
 }
 
 func (c *UserListConfig) Print() error {
@@ -253,4 +149,61 @@ func (organization *Organization) RenderMarkdown(ctx context.Context, templateCo
 		return "", err
 	}
 	return buffer.String(), nil
+}
+
+func (ul *UserList) upsertUser(user User) {
+	for i, u := range ul.Users {
+		if u.Login == user.Login {
+			*ul.Users[i] = user
+			return
+		}
+	}
+	slog.Info("Upserting user", "login", user.Login)
+	ul.Users = append(ul.Users, &user)
+}
+
+func (ul *UserList) findUser(login string) *User {
+	for _, u := range ul.Users {
+		if u.Login == login {
+			return u
+		}
+	}
+	return nil
+}
+
+func (ul *UserList) createUser(number int, login string, name string, email string, contributions int) *User {
+	user := &User{
+		Number:        number,
+		Login:         login,
+		Name:          name,
+		Email:         email,
+		Contributions: contributions,
+		Organizations: new([]Organization),
+	}
+	ul.upsertUser(*user)
+	return user
+}
+
+func (u *User) upsertOrganization(org Organization) {
+	for _, o := range *u.Organizations {
+		if o.Name == org.Name {
+			// organization was found
+			for _, repo := range *org.Repositories {
+				o.upsertRepository(repo)
+			}
+			return
+		}
+	}
+	*u.Organizations = append(*u.Organizations, org)
+}
+
+func (o *Organization) upsertRepository(repo Repository) {
+	for _, r := range *o.Repositories {
+		if r.Name == repo.Name {
+			// repo was found
+			return
+		}
+	}
+	slog.Debug("Upserting repository", "name", repo.Name, "organization", o.Name)
+	*o.Repositories = append(*o.Repositories, repo)
 }
