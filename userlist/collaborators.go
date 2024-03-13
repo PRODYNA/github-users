@@ -149,7 +149,7 @@ func (c *UserListConfig) loadCollaborators() error {
 
 			// count the collaborators
 			collaboratorCount := 0
-			for i, repo := range query.Organization.Repositories.Nodes {
+			for _, repo := range query.Organization.Repositories.Nodes {
 				collaboratorCount += len(repo.Collaborators.Nodes)
 			}
 			if collaboratorCount == 0 {
@@ -201,7 +201,7 @@ func (c *UserListConfig) loadCollaborators() error {
 
 			slog.InfoContext(ctx, "Adding collaborators", "organization", org.Login)
 
-			if !query.Organization.Repositories.Nodes[0].Collaborators.PageInfo.HasNextPage {
+			if !query.Organization.Repositories.PageInfo.HasNextPage {
 				break
 			}
 
