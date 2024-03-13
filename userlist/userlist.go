@@ -162,24 +162,48 @@ func (ul *UserList) upsertUser(user User) {
 	ul.Users = append(ul.Users, &user)
 }
 
+func (ul *UserList) findUser(login string) *User {
+	for _, u := range ul.Users {
+		if u.Login == login {
+			return u
+		}
+	}
+	return nil
+}
+
+func (ul *UserList) createUser(number int, login string, name string, email string, contributions int) *User {
+	user := &User{
+		Number:        number,
+		Login:         login,
+		Name:          name,
+		Email:         email,
+		Contributions: contributions,
+		Organizations: new([]Organization),
+	}
+	ul.upsertUser(*user)
+	return user
+}
+
 func (u *User) upsertOrganization(org Organization) {
-	//for i, o := range u.Organizations {
-	//	if o.Name == org.Name {
-	//		u.Organizations[i] = org
-	//		return
-	//	}
-	//}
+	for _, o := range *u.Organizations {
+		if o.Name == org.Name {
+			// organization was found
+			for _, repo := range *org.Repositories {
+				o.upsertRepository(repo)
+			}
+			return
+		}
+	}
 	*u.Organizations = append(*u.Organizations, org)
-	slog.Debug("Upserting organization", "name", org.Name, "user", u.Login)
 }
 
 func (o *Organization) upsertRepository(repo Repository) {
-	//for i, r := range o.Repositories {
-	//	if r.Name == repo.Name {
-	//		o.Repositories[i] = repo
-	//		return
-	//	}
-	//}
+	for _, r := range *o.Repositories {
+		if r.Name == repo.Name {
+			// repo was found
+			return
+		}
+	}
 	slog.Debug("Upserting repository", "name", repo.Name, "organization", o.Name)
 	*o.Repositories = append(*o.Repositories, repo)
 }

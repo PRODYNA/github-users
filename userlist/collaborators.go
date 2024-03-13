@@ -142,15 +142,13 @@ func (c *UserListConfig) loadCollaborators() error {
 			slog.DebugContext(ctx, "Processing repository", "repository", repo.Name, "collaborator.count", len(repo.Collaborators.Nodes))
 			for _, collaborator := range repo.Collaborators.Nodes {
 				slog.DebugContext(ctx, "Processing collaborator", "login", collaborator.Login, "name", collaborator.Name, "contributions", collaborator.ContributionsCollection.ContributionCalendar.TotalContributions)
-				user := User{
-					Number:        userNumber + 1,
-					Login:         collaborator.Login,
-					Name:          collaborator.Name,
-					Organizations: new([]Organization),
-					Contributions: collaborator.ContributionsCollection.ContributionCalendar.TotalContributions,
+				user := c.userList.findUser(collaborator.Login)
+				if user == nil {
+					user = c.userList.createUser(userNumber+1, collaborator.Login, collaborator.Name, "", collaborator.ContributionsCollection.ContributionCalendar.TotalContributions)
+					userNumber++
+				} else {
+					slog.Info("Found existing user", "login", user.Login)
 				}
-				c.userList.upsertUser(user)
-				userNumber++
 				organization := Organization{
 					Name:         org.Name,
 					Repositories: new([]Repository),
