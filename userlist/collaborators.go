@@ -93,9 +93,6 @@ func (c *UserListConfig) loadCollaborators() error {
 	userNumber := 0
 	slog.Info("Iterating organizatons", "organization.count", len(organizations.Enterprise.Organizations.Nodes))
 	for _, org := range organizations.Enterprise.Organizations.Nodes {
-		if org.Login != "PRODYNA" {
-			continue
-		}
 		slog.Info("Loading repositories and external collaborators", "organization", org.Login)
 		var query struct {
 			Organization struct {

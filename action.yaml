@@ -25,7 +25,7 @@ inputs:
     default: 1
 runs:
   using: 'docker'
-  image: 'docker://ghcr.io/prodyna/github-users:v1.2'
+  image: 'docker://ghcr.io/prodyna/github-users:v1.3'
   env:
     ACTION: ${{ inputs.action }}
     ENTERPRISE: ${{ inputs.enterprise }}
