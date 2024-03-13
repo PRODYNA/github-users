@@ -48,6 +48,7 @@ type User struct {
 }
 
 type Organization struct {
+	Login        string        `json:"Login"`
 	Name         string        `json:"Name"`
 	Repositories *[]Repository `json:"Repositories"`
 }

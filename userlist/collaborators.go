@@ -99,6 +99,7 @@ func (c *UserListConfig) loadCollaborators() error {
 		slog.Info("Loading repositories and external collaborators", "organization", org.Login)
 		var query struct {
 			Organization struct {
+				Login        string
 				Repositories struct {
 					Nodes []struct {
 						Name          string
@@ -150,6 +151,7 @@ func (c *UserListConfig) loadCollaborators() error {
 					slog.Info("Found existing user", "login", user.Login)
 				}
 				organization := Organization{
+					Login:        org.Login,
 					Name:         org.Name,
 					Repositories: new([]Repository),
 				}
