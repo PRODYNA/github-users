@@ -90,6 +90,7 @@ func (c *UserListConfig) loadCollaborators() error {
 	c.userList.Enterprise.Slug = organizations.Enterprise.Slug
 	c.userList.Enterprise.Name = organizations.Enterprise.Name
 
+	userNumber := 0
 	slog.Info("Iterating organizatons", "organization.count", len(organizations.Enterprise.Organizations.Nodes))
 	for _, org := range organizations.Enterprise.Organizations.Nodes {
 		if org.Login != "PRODYNA" {
@@ -142,14 +143,16 @@ func (c *UserListConfig) loadCollaborators() error {
 			for _, collaborator := range repo.Collaborators.Nodes {
 				slog.DebugContext(ctx, "Processing collaborator", "login", collaborator.Login, "name", collaborator.Name, "contributions", collaborator.ContributionsCollection.ContributionCalendar.TotalContributions)
 				user := User{
+					Number:        userNumber + 1,
 					Login:         collaborator.Login,
 					Name:          collaborator.Name,
 					Organizations: new([]Organization),
 					Contributions: collaborator.ContributionsCollection.ContributionCalendar.TotalContributions,
 				}
 				c.userList.upsertUser(user)
+				userNumber++
 				organization := Organization{
-					Name:         repo.Name,
+					Name:         org.Name,
 					Repositories: new([]Repository),
 				}
 				user.upsertOrganization(organization)

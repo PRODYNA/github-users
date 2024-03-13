@@ -1,4 +1,4 @@
-# GitHub Enterprise Users for {{ .Enterprise.Name }}
+# GitHub Enterprise members for {{ .Enterprise.Name }}
 
 Last updated: {{ .Updated }}
 

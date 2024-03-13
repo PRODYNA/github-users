@@ -41,18 +41,35 @@ jobs:
 
       # Run the deployment overview action
       - name: Github users
-        uses: prodyna/github-users@v0.7
+        uses: prodyna/github-users@v1.0
         with:
           # The action to run
-          action: userlist
+          action: members
           # The GitHub Enterprise to query for repositories
           enterprise: octocat
           # The GitHub Token to use for authentication
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # The template file to use for rendering the result
-          template-file: template/userlist.tpl
+          template-file: template/members.tpl
           # The markdown file to write the result to
-          markdown-file: USERS.md
+          markdown-file: MEMBERS.md
+          # Verbosity level, 0=info, 1=debug
+          verbose: 1
+
+      # Run the deployment overview action
+      - name: Github users
+        uses: prodyna/github-users@v1.0
+        with:
+          # The action to run
+          action: collaborators
+          # The GitHub Enterprise to query for repositories
+          enterprise: octocat
+          # The GitHub Token to use for authentication
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # The template file to use for rendering the result
+          template-file: template/collaborators.tpl
+          # The markdown file to write the result to
+          markdown-file: COLLABORATORS.md
           # Verbosity level, 0=info, 1=debug
           verbose: 1
 
@@ -61,6 +78,6 @@ jobs:
         run: |
           git config --local user.email "darko@krizic.net"
           git config --local user.name "Deployment Overview"
-          git add profile
+          git add MEMBERS.md COLLABORATORS.md
           git commit -m "Add/update deployment overview"
 ```
