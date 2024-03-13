@@ -143,6 +143,8 @@ func (c *UserListConfig) loadCollaborators() error {
 			slog.DebugContext(ctx, "Processing repository", "repository", repo.Name, "collaborator.count", len(repo.Collaborators.Nodes))
 			for _, collaborator := range repo.Collaborators.Nodes {
 				slog.DebugContext(ctx, "Processing collaborator", "login", collaborator.Login, "name", collaborator.Name, "contributions", collaborator.ContributionsCollection.ContributionCalendar.TotalContributions)
+
+				// User
 				user := c.userList.findUser(collaborator.Login)
 				if user == nil {
 					user = c.userList.createUser(userNumber+1, collaborator.Login, collaborator.Name, "", collaborator.ContributionsCollection.ContributionCalendar.TotalContributions)
@@ -150,16 +152,23 @@ func (c *UserListConfig) loadCollaborators() error {
 				} else {
 					slog.Info("Found existing user", "login", user.Login)
 				}
-				organization := Organization{
-					Login:        org.Login,
-					Name:         org.Name,
-					Repositories: new([]Repository),
+
+				// Organization
+				organization := user.findOrganization(org.Login)
+				if organization == nil {
+					organization = user.createOrganization(org.Login, org.Name)
+				} else {
+					slog.Info("Found existing organization", "organization", organization.Name)
 				}
-				user.upsertOrganization(organization)
-				repository := Repository{
-					Name: repo.Name,
+
+				// Repository
+				repository := organization.findRepository(repo.Name)
+				if repository == nil {
+					repository = organization.createRepository(repo.Name)
+				} else {
+					slog.Info("Found existing repository", "repository", repository.Name)
 				}
-				organization.upsertRepository(repository)
+				organization.upsertRepository(*repository)
 			}
 		}
 

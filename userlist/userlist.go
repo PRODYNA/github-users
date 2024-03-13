@@ -208,3 +208,39 @@ func (o *Organization) upsertRepository(repo Repository) {
 	slog.Debug("Upserting repository", "name", repo.Name, "organization", o.Name)
 	*o.Repositories = append(*o.Repositories, repo)
 }
+
+func (u *User) findOrganization(login string) *Organization {
+	for _, o := range *u.Organizations {
+		if o.Login == login {
+			return &o
+		}
+	}
+	return nil
+}
+
+func (u *User) createOrganization(login string, name string) *Organization {
+	org := &Organization{
+		Login:        login,
+		Name:         name,
+		Repositories: new([]Repository),
+	}
+	u.upsertOrganization(*org)
+	return org
+}
+
+func (o *Organization) findRepository(name string) *Repository {
+	for _, r := range *o.Repositories {
+		if r.Name == name {
+			return &r
+		}
+	}
+	return nil
+}
+
+func (o *Organization) createRepository(name string) *Repository {
+	repo := &Repository{
+		Name: name,
+	}
+	o.upsertRepository(*repo)
+	return repo
+}
