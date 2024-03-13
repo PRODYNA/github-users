@@ -46,6 +46,10 @@ func (c *UserListConfig) loadCollaborators() error {
 					Login string
 					Name  string
 				}
+				PageInfo struct {
+					HasNextPage bool
+					EndCursor   githubv4.String
+				}
 			} `graphql:"organizations(first:100)"`
 		} `graphql:"enterprise(slug: $slug)"`
 	}
@@ -61,6 +65,11 @@ func (c *UserListConfig) loadCollaborators() error {
 		return err
 	}
 	slog.Info("Loaded organizations", "organization.count", len(organizations.Enterprise.Organizations.Nodes))
+
+	if organizations.Enterprise.Organizations.PageInfo.HasNextPage {
+		slog.Warn("More organizations available - not yet implemented")
+		c.userList.addWarning("More organizations available - not yet implemented")
+	}
 
 	/*
 		{
@@ -113,19 +122,26 @@ func (c *UserListConfig) loadCollaborators() error {
 									}
 								}
 							}
+							PageInfo struct {
+								HasNextPage bool
+								EndCursor   githubv4.String
+							}
 						} `graphql:"collaborators(first:100,affiliation:OUTSIDE)"`
 					}
-				} `graphql:"repositories(first:100)"`
+				} `graphql:"repositories(first:$first,after:$after)"`
 			} `graphql:"organization(login: $organization)"`
 		}
 
 		variables := map[string]interface{}{
 			"organization": githubv4.String(org.Login),
+			"first":        githubv4.Int(100),
+			"after":        (*githubv4.String)(nil),
 		}
 
 		err := client.Query(ctx, &query, variables)
 		if err != nil {
 			slog.WarnContext(ctx, "Unable to query - will skip this organization", "error", err, "organization", org.Login)
+			c.userList.addWarning(fmt.Sprintf("Unable to query organization %s", org.Login))
 			continue
 		}
 
@@ -172,15 +188,15 @@ func (c *UserListConfig) loadCollaborators() error {
 			continue
 		}
 
-		output, err := json.MarshalIndent(c.userList, "", "  ")
-		if err != nil {
-			slog.ErrorContext(ctx, "Unable to marshal json", "error", err)
-			return err
-		}
-		fmt.Printf("%s\n", output)
-
 		slog.InfoContext(ctx, "Adding collaborators", "organization", org.Login)
 	}
+
+	output, err := json.MarshalIndent(c.userList, "", "  ")
+	if err != nil {
+		slog.ErrorContext(ctx, "Unable to marshal json", "error", err)
+		return err
+	}
+	fmt.Printf("%s\n", output)
 
 	c.loaded = true
 	return nil

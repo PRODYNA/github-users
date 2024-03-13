@@ -9,5 +9,9 @@ Last updated: {{ .Updated }}
 
 {{ if .Users }}_{{ len .Users }} users_{{ else }}No users found.{{ end }}
 
+{{ if .Warnings }}
+## Warnings
+{{ range .Warnings }}* {{ . }}
+{{ end }}{{ end }}
 ---
 Generated with :heart: by [github-users](https://github.com/prodyna/github-users)
