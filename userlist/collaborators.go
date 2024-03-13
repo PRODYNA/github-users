@@ -128,6 +128,10 @@ func (c *UserListConfig) loadCollaborators() error {
 							}
 						} `graphql:"collaborators(first:100,affiliation:OUTSIDE)"`
 					}
+					PageInfo struct {
+						HasNextPage bool
+						EndCursor   githubv4.String
+					}
 				} `graphql:"repositories(first:$first,after:$after)"`
 			} `graphql:"organization(login: $organization)"`
 		}
@@ -143,6 +147,11 @@ func (c *UserListConfig) loadCollaborators() error {
 			slog.WarnContext(ctx, "Unable to query - will skip this organization", "error", err, "organization", org.Login)
 			c.userList.addWarning(fmt.Sprintf("Unable to query organization %s", org.Login))
 			continue
+		}
+
+		if query.Organization.Repositories.PageInfo.HasNextPage {
+			slog.Warn("More repositories available - not yet implemented")
+			c.userList.addWarning("More repositories available - not yet implemented")
 		}
 
 		// count the collaborators
