@@ -31,6 +31,7 @@ type UserList struct {
 	Updated    string
 	Enterprise Enterprise
 	Users      []*User
+	Warnings   []string
 }
 
 type Enterprise struct {
@@ -243,4 +244,11 @@ func (o *Organization) createRepository(name string) *Repository {
 	}
 	o.upsertRepository(*repo)
 	return repo
+}
+
+func (c *UserList) addWarning(warning string) {
+	if c.Warnings == nil {
+		c.Warnings = make([]string, 0)
+	}
+	c.Warnings = append(c.Warnings, warning)
 }
