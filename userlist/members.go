@@ -67,6 +67,7 @@ func (c *UserListConfig) loadMembers() error {
 		err := client.Query(ctx, &query, variables)
 		if err != nil {
 			slog.ErrorContext(ctx, "Unable to query", "error", err)
+			return err
 		}
 
 		c.userList.Enterprise = Enterprise{
