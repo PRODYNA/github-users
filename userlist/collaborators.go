@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+const windowSize = 100
+
 func (c *UserListConfig) loadCollaborators() error {
 	slog.Info("Loading collaborators", "enterprise", c.enterprise)
 	c.userList = UserList{
@@ -135,7 +137,7 @@ func (c *UserListConfig) loadCollaborators() error {
 
 		variables := map[string]interface{}{
 			"organization": githubv4.String(org.Login),
-			"first":        githubv4.Int(100),
+			"first":        githubv4.Int(20),
 			"after":        (*githubv4.String)(nil),
 		}
 
