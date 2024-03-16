@@ -41,7 +41,7 @@ jobs:
 
       # Run the deployment overview action
       - name: Github users
-        uses: prodyna/github-users@v1.0
+        uses: prodyna/github-users@v1.6
         with:
           # The action to run
           action: members
@@ -58,7 +58,7 @@ jobs:
 
       # Run the deployment overview action
       - name: Github users
-        uses: prodyna/github-users@v1.0
+        uses: prodyna/github-users@v1.6
         with:
           # The action to run
           action: collaborators
