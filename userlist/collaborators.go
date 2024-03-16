@@ -1,5 +1,7 @@
 package userlist
 
+const windowSize = 100
+
 import (
 	"context"
 	"fmt"
@@ -135,7 +137,7 @@ func (c *UserListConfig) loadCollaborators() error {
 
 		variables := map[string]interface{}{
 			"organization": githubv4.String(org.Login),
-			"first":        githubv4.Int(100),
+			"first":        githubv4.Int(20),
 			"after":        (*githubv4.String)(nil),
 		}
 
