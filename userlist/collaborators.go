@@ -1,7 +1,5 @@
 package userlist
 
-const windowSize = 100
-
 import (
 	"context"
 	"fmt"
@@ -10,6 +8,8 @@ import (
 	"log/slog"
 	"time"
 )
+
+const windowSize = 100
 
 func (c *UserListConfig) loadCollaborators() error {
 	slog.Info("Loading collaborators", "enterprise", c.enterprise)
