@@ -55,7 +55,7 @@ func (c *UserListConfig) loadMembers() error {
 		} `graphql:"enterprise(slug: $slug)"`
 	}
 
-	window := 100
+	window := 25
 	variables := map[string]interface{}{
 		"slug":  githubv4.String("prodyna"),
 		"first": githubv4.Int(window),
