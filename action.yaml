@@ -23,9 +23,13 @@ inputs:
     description: 'The verbosity level'
     required: false
     default: 1
+  own-domains:
+    description: 'Own domains to filter users by email domain'
+    required: false
+    default: ''
 runs:
   using: 'docker'
-  image: 'docker://ghcr.io/prodyna/github-users:v1.8'
+  image: 'docker://ghcr.io/prodyna/github-users:v1.9'
   env:
     ACTION: ${{ inputs.action }}
     ENTERPRISE: ${{ inputs.enterprise }}
@@ -33,3 +37,4 @@ runs:
     TEMPLATE_FILE: ${{ inputs.template-file }}
     MARKDOWN_FILE: ${{ inputs.markdown-file }}
     VERBOSE: ${{ inputs.verbose }}
+    OWN_DOMAINS: ${{ inputs.own-domains }}

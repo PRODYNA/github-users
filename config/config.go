@@ -15,6 +15,7 @@ const (
 	keyTemplateFile = "TEMPLATE_FILE"
 	keyVerbose      = "VERBOSE"
 	keyMarkdownFile = "MARKDOWN_FILE"
+	keyOwnDomains   = "OWN_DOMAINS"
 )
 
 type Config struct {
@@ -23,6 +24,7 @@ type Config struct {
 	GithubToken  string
 	TemplateFile string
 	MarkdownFile string
+	OwnDomains   string
 }
 
 func New() (*Config, error) {
@@ -32,6 +34,7 @@ func New() (*Config, error) {
 	flag.StringVar(&c.GithubToken, keyGithubToken, lookupEnvOrString("GITHUB_TOKEN", ""), "The GitHub Token to use for authentication.")
 	flag.StringVar(&c.TemplateFile, keyTemplateFile, lookupEnvOrString("TEMPLATE_FILE", "template/members.tpl"), "The template file to use for rendering the result.")
 	flag.StringVar(&c.MarkdownFile, keyMarkdownFile, lookupEnvOrString("MARKDOWN_FILE", "USERS.md"), "The markdown file to write the result to.")
+	flag.StringVar(&c.OwnDomains, keyOwnDomains, lookupEnvOrString("OWN_DOMAINS", ""), "The comma separated list of domains to consider as own domains.")
 	verbose := flag.Int("verbose", lookupEnvOrInt(keyVerbose, 0), "Verbosity level, 0=info, 1=debug. Overrides the environment variable VERBOSE.")
 
 	level := slog.LevelInfo

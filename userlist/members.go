@@ -5,6 +5,7 @@ import (
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
 	"log/slog"
+	"strings"
 	"time"
 )
 
@@ -57,7 +58,7 @@ func (c *UserListConfig) loadMembers() error {
 
 	window := 25
 	variables := map[string]interface{}{
-		"slug":  githubv4.String("prodyna"),
+		"slug":  githubv4.String(c.enterprise),
 		"first": githubv4.Int(window),
 		"after": (*githubv4.String)(nil),
 	}
@@ -81,6 +82,7 @@ func (c *UserListConfig) loadMembers() error {
 				Login:         e.Node.User.Login,
 				Name:          e.Node.User.Name,
 				Email:         e.Node.SamlIdentity.NameId,
+				IsOwnDomain:   IsOwnDomain(e.Node.SamlIdentity.NameId, c.ownDomains),
 				Contributions: e.Node.User.ContributionsCollection.ContributionCalendar.TotalContributions,
 			}
 			c.userList.upsertUser(u)
@@ -96,4 +98,16 @@ func (c *UserListConfig) loadMembers() error {
 	slog.InfoContext(ctx, "Loaded userlist", "users", len(c.userList.Users))
 	c.loaded = true
 	return nil
+}
+
+func IsOwnDomain(email string, ownDomains []string) bool {
+	if len(ownDomains) == 0 {
+		return true
+	}
+	for _, domain := range ownDomains {
+		if strings.HasSuffix(email, domain) {
+			return true
+		}
+	}
+	return false
 }

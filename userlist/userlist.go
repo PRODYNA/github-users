@@ -25,6 +25,7 @@ type UserListConfig struct {
 	validated    bool
 	loaded       bool
 	userList     UserList
+	ownDomains   []string
 }
 
 type UserList struct {
@@ -44,6 +45,7 @@ type User struct {
 	Login         string `json:"Login"`
 	Name          string `json:"Name"`
 	Email         string `json:"Email"`
+	IsOwnDomain   bool   `json:"IsOwnDomain"`
 	Contributions int    `json:"Contributions"`
 	Organizations *[]Organization
 }
@@ -80,7 +82,8 @@ func (c *UserListConfig) Validate() error {
 		"enterprise", c.enterprise,
 		"template", c.templateFile,
 		"githubToken", "***",
-		"markdownFile", c.markdownFile)
+		"markdownFile", c.markdownFile,
+		slog.Any("ownDomains", c.ownDomains))
 	return nil
 }
 
