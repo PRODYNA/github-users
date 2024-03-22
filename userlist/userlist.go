@@ -82,7 +82,8 @@ func (c *UserListConfig) Validate() error {
 		"enterprise", c.enterprise,
 		"template", c.templateFile,
 		"githubToken", "***",
-		"markdownFile", c.markdownFile)
+		"markdownFile", c.markdownFile,
+		slog.Any("ownDomains", c.ownDomains))
 	return nil
 }
 

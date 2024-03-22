@@ -7,20 +7,6 @@ import (
 	"os"
 )
 
-const (
-	keyAction       = "ACTION"
-	keyOrganization = "ORGANIZATION"
-	keyGithubToken  = "GITHUB_TOKEN"
-	keyTemplateFile = "TEMPLATE_FILE"
-)
-
-type Config struct {
-	Action       string
-	Enterprise   string
-	GithubToken  string
-	TemplateFile string
-}
-
 func main() {
 	c, err := config.New()
 	if err != nil {
@@ -34,6 +20,7 @@ func main() {
 		userlist.WithGithubToken(c.GithubToken),
 		userlist.WithTemplateFile(c.TemplateFile),
 		userlist.WithMarkdownFile(c.MarkdownFile),
+		userlist.WithOwnDomains(c.OwnDomains),
 	)
 
 	err = ulc.Validate()
