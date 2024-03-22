@@ -1,5 +1,7 @@
 package userlist
 
+import "strings"
+
 func New(options ...func(*UserListConfig)) *UserListConfig {
 	config := &UserListConfig{
 		validated: false,
@@ -38,5 +40,11 @@ func WithGithubToken(githubToken string) func(*UserListConfig) {
 func WithMarkdownFile(markdownFile string) func(*UserListConfig) {
 	return func(config *UserListConfig) {
 		config.markdownFile = markdownFile
+	}
+}
+
+func WithOwnDomains(ownDomains string) func(*UserListConfig) {
+	return func(config *UserListConfig) {
+		config.ownDomains = strings.Split(ownDomains, ",")
 	}
 }

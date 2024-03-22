@@ -25,6 +25,7 @@ type UserListConfig struct {
 	validated    bool
 	loaded       bool
 	userList     UserList
+	ownDomains   []string
 }
 
 type UserList struct {
@@ -44,6 +45,7 @@ type User struct {
 	Login         string `json:"Login"`
 	Name          string `json:"Name"`
 	Email         string `json:"Email"`
+	IsOwnDomain   bool   `json:"IsOwnDomain"`
 	Contributions int    `json:"Contributions"`
 	Organizations *[]Organization
 }
