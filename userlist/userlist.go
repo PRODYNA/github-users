@@ -19,7 +19,7 @@ const (
 type UserListConfig struct {
 	action       string
 	templateFile string
-	markdownFile string
+	outputFile   string
 	enterprise   string
 	githubToken  string
 	validated    bool
@@ -73,8 +73,8 @@ func (c *UserListConfig) Validate() error {
 	if c.githubToken == "" {
 		return errors.New("Github Token is required")
 	}
-	if c.markdownFile == "" {
-		return errors.New("Markdown File is required")
+	if c.outputFile == "" {
+		return errors.New("Output File is required")
 	}
 	c.validated = true
 	slog.Debug("Validated userlist",
@@ -82,7 +82,7 @@ func (c *UserListConfig) Validate() error {
 		"enterprise", c.enterprise,
 		"template", c.templateFile,
 		"githubToken", "***",
-		"markdownFile", c.markdownFile,
+		"outputFile", c.outputFile,
 		slog.Any("ownDomains", c.ownDomains))
 	return nil
 }
@@ -135,16 +135,16 @@ func (ul *UserListConfig) Render() error {
 		return err
 	}
 
-	err = os.WriteFile(ul.markdownFile, buffer.Bytes(), 0644)
+	err = os.WriteFile(ul.outputFile, buffer.Bytes(), 0644)
 	if err != nil {
-		slog.Error("Unable to write userlist", "error", err, "file", ul.markdownFile)
+		slog.Error("Unable to write userlist", "error", err, "file", ul.outputFile)
 		return err
 	}
 	return nil
 }
 
-func (organization *Organization) RenderMarkdown(ctx context.Context, templateContent string) (string, error) {
-	// render the organization to markdown
+func (organization *Organization) RenderOutput(ctx context.Context, templateContent string) (string, error) {
+	// render the organization to output
 	tmpl := template.Must(template.New("organization").Parse(templateContent))
 	// execute template to a string
 	var buffer bytes.Buffer

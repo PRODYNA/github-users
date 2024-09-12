@@ -37,9 +37,9 @@ func WithGithubToken(githubToken string) func(*UserListConfig) {
 	}
 }
 
-func WithMarkdownFile(markdownFile string) func(*UserListConfig) {
+func WithOutputFile(outputFile string) func(*UserListConfig) {
 	return func(config *UserListConfig) {
-		config.markdownFile = markdownFile
+		config.outputFile = outputFile
 	}
 }
 

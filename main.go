@@ -19,7 +19,7 @@ func main() {
 		userlist.WithEnterprise(c.Enterprise),
 		userlist.WithGithubToken(c.GithubToken),
 		userlist.WithTemplateFile(c.TemplateFile),
-		userlist.WithMarkdownFile(c.MarkdownFile),
+		userlist.WithOutputFile(c.OutputFile),
 		userlist.WithOwnDomains(c.OwnDomains),
 	)
 
