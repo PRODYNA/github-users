@@ -9,33 +9,40 @@ import (
 )
 
 const (
-	keyAction       = "ACTION"
-	keyEnterprise   = "ENTERPRISE"
-	keyGithubToken  = "GITHUB_TOKEN"
-	keyTemplateFile = "TEMPLATE_FILE"
-	keyVerbose      = "VERBOSE"
-	keyOutputFile   = "OUTPUT_FILE"
-	keyOwnDomains   = "OWN_DOMAINS"
+	keyAction                   = "action"
+	kkeyActionEnvironment       = "ACTION"
+	keyEnterprise               = "enterprise"
+	keyEnterpriseEnvironment    = "ENTERPRISE"
+	keyGithubToken              = "githubToken"
+	keyGithubTokenEnvironment   = "GITHUB_TOKEN"
+	keyTemplateFiles            = "template-files"
+	keyTemplateFilesEnvironment = "TEMPLATE_FILES"
+	keyOutputFiles              = "output-files"
+	keyOutputFilesEnvironment   = "OUTPUT_FILES"
+	keyVerbose                  = "verbose"
+	keyVerboseEnvironment       = "VERBOSE"
+	keyOwnDomains               = "own-domains"
+	keyOwnDomainsEnvironment    = "OWN_DOMAINS"
 )
 
 type Config struct {
-	Action       string
-	Enterprise   string
-	GithubToken  string
-	TemplateFile string
-	OutputFile   string
-	OwnDomains   string
+	Action        string
+	Enterprise    string
+	GithubToken   string
+	TemplateFiles string
+	OutputFiles   string
+	OwnDomains    string
 }
 
 func New() (*Config, error) {
 	c := Config{}
-	flag.StringVar(&c.Action, keyAction, lookupEnvOrString("ACTION", ""), "The action to perform.")
-	flag.StringVar(&c.Enterprise, keyEnterprise, lookupEnvOrString("ENTERPRISE", ""), "The GitHub Enterprise to query for repositories.")
-	flag.StringVar(&c.GithubToken, keyGithubToken, lookupEnvOrString("GITHUB_TOKEN", ""), "The GitHub Token to use for authentication.")
-	flag.StringVar(&c.TemplateFile, keyTemplateFile, lookupEnvOrString("TEMPLATE_FILE", "template/members.tpl"), "The template file to use for rendering the result.")
-	flag.StringVar(&c.OutputFile, keyOutputFile, lookupEnvOrString("OUTPUT_FILE", ""), "The output file to write the result to.")
-	flag.StringVar(&c.OwnDomains, keyOwnDomains, lookupEnvOrString("OWN_DOMAINS", ""), "The comma separated list of domains to consider as own domains.")
-	verbose := flag.Int("verbose", lookupEnvOrInt(keyVerbose, 0), "Verbosity level, 0=info, 1=debug. Overrides the environment variable VERBOSE.")
+	flag.StringVar(&c.Action, keyAction, lookupEnvOrString(kkeyActionEnvironment, ""), "The action to perform.")
+	flag.StringVar(&c.Enterprise, keyEnterprise, lookupEnvOrString(keyEnterpriseEnvironment, ""), "The GitHub Enterprise to query for repositories.")
+	flag.StringVar(&c.GithubToken, keyGithubToken, lookupEnvOrString(keyGithubTokenEnvironment, ""), "The GitHub Token to use for authentication.")
+	flag.StringVar(&c.TemplateFiles, keyTemplateFiles, lookupEnvOrString(keyTemplateFilesEnvironment, "template/members.tpl"), "The template file to use for rendering the result.")
+	flag.StringVar(&c.OutputFiles, keyOutputFiles, lookupEnvOrString(keyOutputFilesEnvironment, ""), "The output file to write the result to.")
+	flag.StringVar(&c.OwnDomains, keyOwnDomains, lookupEnvOrString(keyOwnDomainsEnvironment, ""), "The comma separated list of domains to consider as own domains.")
+	verbose := flag.Int(keyVerbose, lookupEnvOrInt(keyVerboseEnvironment, 0), "Verbosity level, 0=info, 1=debug. Overrides the environment variable VERBOSE.")
 
 	level := slog.LevelInfo
 	if *verbose > 0 {

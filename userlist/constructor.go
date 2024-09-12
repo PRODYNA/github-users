@@ -19,9 +19,9 @@ func WithAction(action string) func(*UserListConfig) {
 	}
 }
 
-func WithTemplateFile(templateFile string) func(*UserListConfig) {
+func WithTemplateFiles(templateFiles string) func(*UserListConfig) {
 	return func(config *UserListConfig) {
-		config.templateFile = templateFile
+		config.templateFiles = strings.Split(templateFiles, ",")
 	}
 }
 
@@ -37,9 +37,9 @@ func WithGithubToken(githubToken string) func(*UserListConfig) {
 	}
 }
 
-func WithOutputFile(outputFile string) func(*UserListConfig) {
+func WithOutputFiles(outputFiles string) func(*UserListConfig) {
 	return func(config *UserListConfig) {
-		config.outputFile = outputFile
+		config.outputFiles = strings.Split(outputFiles, ",")
 	}
 }
 

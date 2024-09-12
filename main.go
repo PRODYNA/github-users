@@ -18,8 +18,8 @@ func main() {
 		userlist.WithAction(c.Action),
 		userlist.WithEnterprise(c.Enterprise),
 		userlist.WithGithubToken(c.GithubToken),
-		userlist.WithTemplateFile(c.TemplateFile),
-		userlist.WithOutputFile(c.OutputFile),
+		userlist.WithTemplateFiles(c.TemplateFiles),
+		userlist.WithOutputFiles(c.OutputFiles),
 		userlist.WithOwnDomains(c.OwnDomains),
 	)
 

@@ -17,15 +17,15 @@ const (
 )
 
 type UserListConfig struct {
-	action       string
-	templateFile string
-	outputFile   string
-	enterprise   string
-	githubToken  string
-	validated    bool
-	loaded       bool
-	userList     UserList
-	ownDomains   []string
+	action        string
+	templateFiles []string
+	outputFiles   []string
+	enterprise    string
+	githubToken   string
+	validated     bool
+	loaded        bool
+	userList      UserList
+	ownDomains    []string
 }
 
 type UserList struct {
@@ -64,8 +64,11 @@ func (c *UserListConfig) Validate() error {
 	if c.action == "" {
 		return errors.New("Action is required")
 	}
-	if c.templateFile == "" {
+	if len(c.templateFiles) == 0 {
 		return errors.New("Template is required")
+	}
+	if len(c.outputFiles) == 0 {
+		return errors.New("Output File is required")
 	}
 	if c.enterprise == "" {
 		return errors.New("Enterprise is required")
@@ -73,16 +76,17 @@ func (c *UserListConfig) Validate() error {
 	if c.githubToken == "" {
 		return errors.New("Github Token is required")
 	}
-	if c.outputFile == "" {
-		return errors.New("Output File is required")
+	if len(c.templateFiles) != len(c.outputFiles) {
+		return errors.New("Template and Output Files must have the same length")
 	}
+
 	c.validated = true
 	slog.Debug("Validated userlist",
 		"action", c.action,
 		"enterprise", c.enterprise,
-		"template", c.templateFile,
+		"templateFiles", c.templateFiles,
 		"githubToken", "***",
-		"outputFile", c.outputFile,
+		"outputFiles", c.outputFiles,
 		slog.Any("ownDomains", c.ownDomains))
 	return nil
 }
@@ -120,25 +124,30 @@ func (ul *UserListConfig) Render() error {
 	if !ul.loaded {
 		return errors.New("UserList not loaded")
 	}
-	slog.Info("Rendering userlist", "template", ul.templateFile)
-	templateFile, err := os.ReadFile(ul.templateFile)
-	if err != nil {
-		slog.Error("Unable to read template file", "error", err, "file", ul.templateFile)
-		return err
-	}
 
-	tmpl := template.Must(template.New("userlist").Parse(string(templateFile)))
-	var buffer bytes.Buffer
-	err = tmpl.Execute(&buffer, ul.userList)
-	if err != nil {
-		slog.Error("Unable to render userlist", "error", err)
-		return err
-	}
+	for i, templateFileName := range ul.templateFiles {
+		outputFileName := ul.outputFiles[i]
 
-	err = os.WriteFile(ul.outputFile, buffer.Bytes(), 0644)
-	if err != nil {
-		slog.Error("Unable to write userlist", "error", err, "file", ul.outputFile)
-		return err
+		slog.Info("Rendering userlist", "templateFile", templateFileName, "outputFile", outputFileName)
+		templateFile, err := os.ReadFile(templateFileName)
+		if err != nil {
+			slog.Error("Unable to read template file", "error", err, "file", templateFileName)
+			return err
+		}
+
+		tmpl := template.Must(template.New("userlist").Parse(string(templateFile)))
+		var buffer bytes.Buffer
+		err = tmpl.Execute(&buffer, ul.userList)
+		if err != nil {
+			slog.Error("Unable to render userlist", "error", err)
+			return err
+		}
+
+		err = os.WriteFile(outputFileName, buffer.Bytes(), 0644)
+		if err != nil {
+			slog.Error("Unable to write userlist", "error", err, "file", outputFileName)
+			return err
+		}
 	}
 	return nil
 }
