@@ -52,7 +52,7 @@ jobs:
           # The template file to use for rendering the result
           template-file: template/members.tpl
           # The markdown file to write the result to
-          markdown-file: MEMBERS.md
+          output-file: MEMBERS.md
           # Verbosity level, 0=info, 1=debug
           verbose: 1
 
@@ -69,7 +69,7 @@ jobs:
           # The template file to use for rendering the result
           template-file: template/collaborators.tpl
           # The markdown file to write the result to
-          markdown-file: COLLABORATORS.md
+          output-file: COLLABORATORS.md
           # Verbosity level, 0=info, 1=debug
           verbose: 1
 
