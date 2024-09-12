@@ -11,14 +11,14 @@ inputs:
   github-token:
     description: 'The GitHub Token to use for authentication'
     required: true
-  template-file:
+  template-files:
     description: 'The template file to use for rendering the result'
     required: false
-    default: '/template/members.tpl'
-  markdown-file:
-    description: 'The markdown file to write the result to'
+    default: '/template/markdown/members.tpl,/template/json/members.tpl'
+  output-files:
+    description: 'The output files to write the result to'
     required: false
-    default: 'USERS.md'
+    default: 'MEMBERS.md,members.json'
   verbose:
     description: 'The verbosity level'
     required: false
@@ -29,12 +29,12 @@ inputs:
     default: ''
 runs:
   using: 'docker'
-  image: 'docker://ghcr.io/prodyna/github-users:v1.9'
+  image: 'docker://ghcr.io/prodyna/github-users:v2.0'
   env:
     ACTION: ${{ inputs.action }}
     ENTERPRISE: ${{ inputs.enterprise }}
     GITHUB_TOKEN: ${{ inputs.github-token }}
-    TEMPLATE_FILE: ${{ inputs.template-file }}
-    MARKDOWN_FILE: ${{ inputs.markdown-file }}
+    TEMPLATE_FILES: ${{ inputs.template-files }}
+    OUTPUT_FILES: ${{ inputs.markdown-files }}
     VERBOSE: ${{ inputs.verbose }}
     OWN_DOMAINS: ${{ inputs.own-domains }}
