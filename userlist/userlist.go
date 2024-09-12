@@ -17,55 +17,66 @@ const (
 )
 
 type UserListConfig struct {
-	action       string
-	templateFile string
-	markdownFile string
-	enterprise   string
-	githubToken  string
-	validated    bool
-	loaded       bool
-	userList     UserList
-	ownDomains   []string
+	action        string
+	templateFiles []string
+	outputFiles   []string
+	enterprise    string
+	githubToken   string
+	validated     bool
+	loaded        bool
+	userList      UserList
+	ownDomains    []string
 }
 
 type UserList struct {
-	Updated    string
-	Enterprise Enterprise
-	Users      []*User
-	Warnings   []string
+	Updated    string     `json:"updated"`
+	Enterprise Enterprise `json:"enterprise"`
+	Users      []*User    `json:"users"`
+	Warnings   []*Warning `json:"warnings"`
+}
+
+type Warning struct {
+	Message string `json:"message"`
+	Last    bool   `json:"last"`
 }
 
 type Enterprise struct {
-	Slug string
-	Name string
+	Slug string `json:"slug"`
+	Name string `json:"name"`
 }
 
 type User struct {
-	Number        int    `json:"Number"`
-	Login         string `json:"Login"`
-	Name          string `json:"Name"`
-	Email         string `json:"Email"`
-	IsOwnDomain   bool   `json:"IsOwnDomain"`
-	Contributions int    `json:"Contributions"`
+	Number        int    `json:"number"`
+	Login         string `json:"login"`
+	Name          string `json:"name"`
+	Email         string `json:"email"`
+	IsOwnDomain   bool   `json:"is_own_domain"`
+	Contributions int    `json:"contributions"`
 	Organizations *[]Organization
+	Last          bool `json:"last"`
 }
 
 type Organization struct {
-	Login        string        `json:"Login"`
-	Name         string        `json:"Name"`
-	Repositories *[]Repository `json:"Repositories"`
+	Login        string        `json:"login"`
+	Name         string        `json:"name"`
+	Repositories *[]Repository `json:"repositories"`
+	Last         bool          `json:"last"`
 }
 
 type Repository struct {
-	Name string `json:"Name"`
+	Name string `json:"name"`
+	Last bool   `json:"last"`
 }
 
 func (c *UserListConfig) Validate() error {
 	if c.action == "" {
 		return errors.New("Action is required")
 	}
-	if c.templateFile == "" {
+	if len(c.templateFiles) == 0 {
 		return errors.New("Template is required")
+	}
+	if len(c.outputFiles) == 0 {
+		return errors.New("Output File is required")
 	}
 	if c.enterprise == "" {
 		return errors.New("Enterprise is required")
@@ -73,16 +84,17 @@ func (c *UserListConfig) Validate() error {
 	if c.githubToken == "" {
 		return errors.New("Github Token is required")
 	}
-	if c.markdownFile == "" {
-		return errors.New("Markdown File is required")
+	if len(c.templateFiles) != len(c.outputFiles) {
+		return errors.New("Template and Output Files must have the same length")
 	}
+
 	c.validated = true
 	slog.Debug("Validated userlist",
 		"action", c.action,
 		"enterprise", c.enterprise,
-		"template", c.templateFile,
+		"templateFiles", c.templateFiles,
 		"githubToken", "***",
-		"markdownFile", c.markdownFile,
+		"outputFiles", c.outputFiles,
 		slog.Any("ownDomains", c.ownDomains))
 	return nil
 }
@@ -120,31 +132,36 @@ func (ul *UserListConfig) Render() error {
 	if !ul.loaded {
 		return errors.New("UserList not loaded")
 	}
-	slog.Info("Rendering userlist", "template", ul.templateFile)
-	templateFile, err := os.ReadFile(ul.templateFile)
-	if err != nil {
-		slog.Error("Unable to read template file", "error", err, "file", ul.templateFile)
-		return err
-	}
 
-	tmpl := template.Must(template.New("userlist").Parse(string(templateFile)))
-	var buffer bytes.Buffer
-	err = tmpl.Execute(&buffer, ul.userList)
-	if err != nil {
-		slog.Error("Unable to render userlist", "error", err)
-		return err
-	}
+	for i, templateFileName := range ul.templateFiles {
+		outputFileName := ul.outputFiles[i]
 
-	err = os.WriteFile(ul.markdownFile, buffer.Bytes(), 0644)
-	if err != nil {
-		slog.Error("Unable to write userlist", "error", err, "file", ul.markdownFile)
-		return err
+		slog.Info("Rendering userlist", "templateFile", templateFileName, "outputFile", outputFileName)
+		templateFile, err := os.ReadFile(templateFileName)
+		if err != nil {
+			slog.Error("Unable to read template file", "error", err, "file", templateFileName)
+			return err
+		}
+
+		tmpl := template.Must(template.New("userlist").Parse(string(templateFile)))
+		var buffer bytes.Buffer
+		err = tmpl.Execute(&buffer, ul.userList)
+		if err != nil {
+			slog.Error("Unable to render userlist", "error", err)
+			return err
+		}
+
+		err = os.WriteFile(outputFileName, buffer.Bytes(), 0644)
+		if err != nil {
+			slog.Error("Unable to write userlist", "error", err, "file", outputFileName)
+			return err
+		}
 	}
 	return nil
 }
 
-func (organization *Organization) RenderMarkdown(ctx context.Context, templateContent string) (string, error) {
-	// render the organization to markdown
+func (organization *Organization) RenderOutput(ctx context.Context, templateContent string) (string, error) {
+	// render the organization to output
 	tmpl := template.Must(template.New("organization").Parse(templateContent))
 	// execute template to a string
 	var buffer bytes.Buffer
@@ -164,6 +181,12 @@ func (ul *UserList) upsertUser(user User) {
 		}
 	}
 	slog.Info("Upserting user", "login", user.Login)
+	// mark all eixsting users as last = false
+	for i, _ := range ul.Users {
+		ul.Users[i].Last = false
+	}
+	// mark the new user as last = true
+	user.Last = true
 	ul.Users = append(ul.Users, &user)
 }
 
@@ -199,6 +222,13 @@ func (u *User) upsertOrganization(org Organization) {
 			return
 		}
 	}
+	slog.Debug("Upserting organization", "name", org.Name)
+	// mark all existing organizations as last = false
+	for i, _ := range *u.Organizations {
+		(*u.Organizations)[i].Last = false
+	}
+	// mark the new organization as last = true
+	org.Last = true
 	*u.Organizations = append(*u.Organizations, org)
 }
 
@@ -210,6 +240,12 @@ func (o *Organization) upsertRepository(repo Repository) {
 		}
 	}
 	slog.Debug("Upserting repository", "name", repo.Name, "organization", o.Name)
+	// mark all existing repositories as last = false
+	for i := range *o.Repositories {
+		(*o.Repositories)[i].Last = false
+	}
+	// mark the new repository as last = true
+	repo.Last = true
 	*o.Repositories = append(*o.Repositories, repo)
 }
 
@@ -227,6 +263,7 @@ func (u *User) createOrganization(login string, name string) *Organization {
 		Login:        login,
 		Name:         name,
 		Repositories: new([]Repository),
+		Last:         false,
 	}
 	u.upsertOrganization(*org)
 	return org
@@ -251,7 +288,11 @@ func (o *Organization) createRepository(name string) *Repository {
 
 func (c *UserList) addWarning(warning string) {
 	if c.Warnings == nil {
-		c.Warnings = make([]string, 0)
+		c.Warnings = make([]*Warning, 0)
 	}
-	c.Warnings = append(c.Warnings, warning)
+	// mark all exisint warnings as last = false
+	for _, w := range c.Warnings {
+		w.Last = false
+	}
+	c.Warnings = append(c.Warnings, &Warning{Message: warning, Last: true})
 }

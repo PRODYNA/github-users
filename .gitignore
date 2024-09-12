@@ -1,3 +1,6 @@
 .idea/
 .env
 USERS.md
+github-users
+output.json
+output.md
