@@ -35,6 +35,6 @@ runs:
     ENTERPRISE: ${{ inputs.enterprise }}
     GITHUB_TOKEN: ${{ inputs.github-token }}
     TEMPLATE_FILES: ${{ inputs.template-files }}
-    OUTPUT_FILES: ${{ inputs.markdown-files }}
+    OUTPUT_FILES: ${{ inputs.output-files }}
     VERBOSE: ${{ inputs.verbose }}
     OWN_DOMAINS: ${{ inputs.own-domains }}
