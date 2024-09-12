@@ -92,9 +92,7 @@ func (c *UserListConfig) loadMembers() error {
 			break
 		}
 
-		break
-
-		// variables["after"] = githubv4.NewString(query.Enterprise.OwnerInfo.SamlIdentityProvider.ExternalIdentities.PageInfo.EndCursor)
+		variables["after"] = githubv4.NewString(query.Enterprise.OwnerInfo.SamlIdentityProvider.ExternalIdentities.PageInfo.EndCursor)
 	}
 
 	// iterate over all users and mark the last one as last
