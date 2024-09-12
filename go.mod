@@ -1,6 +1,6 @@
 module github.com/prodyna/github-users
 
-go 1.22.1
+go 1.23.1
 
 require (
 	github.com/shurcooL/githubv4 v0.0.0-20240727222349-48295856cce7

@@ -32,7 +32,12 @@ type UserList struct {
 	Updated    string     `json:"updated"`
 	Enterprise Enterprise `json:"enterprise"`
 	Users      []*User    `json:"users"`
-	Warnings   []string   `json:"warnings"`
+	Warnings   []*Warning `json:"warnings"`
+}
+
+type Warning struct {
+	Message string `json:"message"`
+	Last    bool   `json:"last"`
 }
 
 type Enterprise struct {
@@ -55,10 +60,12 @@ type Organization struct {
 	Login        string        `json:"login"`
 	Name         string        `json:"name"`
 	Repositories *[]Repository `json:"repositories"`
+	Last         bool          `json:"last"`
 }
 
 type Repository struct {
 	Name string `json:"name"`
+	Last bool   `json:"last"`
 }
 
 func (c *UserListConfig) Validate() error {
@@ -174,6 +181,12 @@ func (ul *UserList) upsertUser(user User) {
 		}
 	}
 	slog.Info("Upserting user", "login", user.Login)
+	// mark all eixsting users as last = false
+	for i, _ := range ul.Users {
+		ul.Users[i].Last = false
+	}
+	// mark the new user as last = true
+	user.Last = true
 	ul.Users = append(ul.Users, &user)
 }
 
@@ -209,6 +222,13 @@ func (u *User) upsertOrganization(org Organization) {
 			return
 		}
 	}
+	slog.Debug("Upserting organization", "name", org.Name)
+	// mark all existing organizations as last = false
+	for i, _ := range *u.Organizations {
+		(*u.Organizations)[i].Last = false
+	}
+	// mark the new organization as last = true
+	org.Last = true
 	*u.Organizations = append(*u.Organizations, org)
 }
 
@@ -220,6 +240,12 @@ func (o *Organization) upsertRepository(repo Repository) {
 		}
 	}
 	slog.Debug("Upserting repository", "name", repo.Name, "organization", o.Name)
+	// mark all existing repositories as last = false
+	for i := range *o.Repositories {
+		(*o.Repositories)[i].Last = false
+	}
+	// mark the new repository as last = true
+	repo.Last = true
 	*o.Repositories = append(*o.Repositories, repo)
 }
 
@@ -237,6 +263,7 @@ func (u *User) createOrganization(login string, name string) *Organization {
 		Login:        login,
 		Name:         name,
 		Repositories: new([]Repository),
+		Last:         false,
 	}
 	u.upsertOrganization(*org)
 	return org
@@ -261,7 +288,11 @@ func (o *Organization) createRepository(name string) *Repository {
 
 func (c *UserList) addWarning(warning string) {
 	if c.Warnings == nil {
-		c.Warnings = make([]string, 0)
+		c.Warnings = make([]*Warning, 0)
 	}
-	c.Warnings = append(c.Warnings, warning)
+	// mark all exisint warnings as last = false
+	for _, w := range c.Warnings {
+		w.Last = false
+	}
+	c.Warnings = append(c.Warnings, &Warning{Message: warning, Last: true})
 }

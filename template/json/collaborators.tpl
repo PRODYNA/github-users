@@ -1,15 +1,32 @@
-# GitHub Enterprise collaborators for {{ .Enterprise.Name }}
-
-Last updated: {{ .Updated }}
-
-| Number | User | Contributions | Organization | Repository |
-| ------ | ---- | ------------- | ------------ | ---------- |
-{{ range $user := .Users }}{{ range $org := $user.Organizations }}{{ range $repo := $org.Repositories }}| {{ $user.Number }} | [{{ $user.Login }}](https://github.com/{{ $user.Login }}) | {{if $user.Contributions}}:green_square:{{else}}:red_square:{{end}} {{ $user.Contributions }} | [{{ $org.Name }}](https://github.com/{{ $org.Login }}) | [{{ $repo.Name }}](https://github.com/{{ $org.Login }}/{{ $repo.Name }}) |
-{{ end }}{{ end }}{{ end }}
-
-{{ if .Warnings }}
-## Warnings
-{{ range .Warnings }}* {{ . }}
-{{ end }}{{ end }}
----
-Generated with :heart: by [github-users](https://github.com/prodyna/github-users)
+{
+    "updated": "{{ .Updated }}",
+    "enterprise": {
+        "name": "{{ .Enterprise.Name }}",
+        "slug": "{{ .Enterprise.Slug }}"
+    },
+    "users": [{{ range $user := .Users }}
+        {
+            "number": {{ $user.Number }},
+            "login": "{{ $user.Login }}",
+            "contributions": {{ $user.Contributions }},
+            "organizations": [{{ range $org := $user.Organizations }}
+                {
+                    "name": "{{ $org.Name }}",
+                    "login": "{{ $org.Login }}",
+                    "repositories": [{{ range $repo := $org.Repositories }}
+                        {
+                            "name": "{{ $repo.Name }}"
+                        }{{ if not $repo.Last }},{{ end }}{{ end }}
+                    ]
+                }{{ if not $org.Last }},{{ end }}{{ end }}
+            ]
+        }{{ if not $user.Last }},{{ end }}{{ end }}
+    ],
+    "warnings": [{{ range .Warnings }}
+        "{{ .Message }}"{{ if not .Last }},{{ end }}{{ end }}
+    ],
+    "generated": {
+        "by": "github-users",
+        "with": ":heart:"
+    }
+}
