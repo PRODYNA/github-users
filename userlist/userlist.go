@@ -29,35 +29,36 @@ type UserListConfig struct {
 }
 
 type UserList struct {
-	Updated    string
-	Enterprise Enterprise
-	Users      []*User
-	Warnings   []string
+	Updated    string     `json:"updated"`
+	Enterprise Enterprise `json:"enterprise"`
+	Users      []*User    `json:"users"`
+	Warnings   []string   `json:"warnings"`
 }
 
 type Enterprise struct {
-	Slug string
-	Name string
+	Slug string `json:"slug"`
+	Name string `json:"name"`
 }
 
 type User struct {
-	Number        int    `json:"Number"`
-	Login         string `json:"Login"`
-	Name          string `json:"Name"`
-	Email         string `json:"Email"`
-	IsOwnDomain   bool   `json:"IsOwnDomain"`
-	Contributions int    `json:"Contributions"`
+	Number        int    `json:"number"`
+	Login         string `json:"login"`
+	Name          string `json:"name"`
+	Email         string `json:"email"`
+	IsOwnDomain   bool   `json:"is_own_domain"`
+	Contributions int    `json:"contributions"`
 	Organizations *[]Organization
+	Last          bool `json:"last"`
 }
 
 type Organization struct {
-	Login        string        `json:"Login"`
-	Name         string        `json:"Name"`
-	Repositories *[]Repository `json:"Repositories"`
+	Login        string        `json:"login"`
+	Name         string        `json:"name"`
+	Repositories *[]Repository `json:"repositories"`
 }
 
 type Repository struct {
-	Name string `json:"Name"`
+	Name string `json:"name"`
 }
 
 func (c *UserListConfig) Validate() error {

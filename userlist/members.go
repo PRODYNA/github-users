@@ -92,7 +92,18 @@ func (c *UserListConfig) loadMembers() error {
 			break
 		}
 
-		variables["after"] = githubv4.NewString(query.Enterprise.OwnerInfo.SamlIdentityProvider.ExternalIdentities.PageInfo.EndCursor)
+		break
+
+		// variables["after"] = githubv4.NewString(query.Enterprise.OwnerInfo.SamlIdentityProvider.ExternalIdentities.PageInfo.EndCursor)
+	}
+
+	// iterate over all users and mark the last one as last
+	for i, u := range c.userList.Users {
+		if i == len(c.userList.Users)-1 {
+			u.Last = true
+		} else {
+			u.Last = false
+		}
 	}
 
 	slog.InfoContext(ctx, "Loaded userlist", "users", len(c.userList.Users))
