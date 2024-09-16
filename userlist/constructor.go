@@ -2,6 +2,10 @@ package userlist
 
 import "strings"
 
+const (
+	separator = ","
+)
+
 func New(options ...func(*UserListConfig)) *UserListConfig {
 	config := &UserListConfig{
 		validated: false,
@@ -21,7 +25,7 @@ func WithAction(action string) func(*UserListConfig) {
 
 func WithTemplateFiles(templateFiles string) func(*UserListConfig) {
 	return func(config *UserListConfig) {
-		config.templateFiles = strings.Split(templateFiles, ",")
+		config.templateFiles = strings.Split(templateFiles, separator)
 	}
 }
 
@@ -39,12 +43,12 @@ func WithGithubToken(githubToken string) func(*UserListConfig) {
 
 func WithOutputFiles(outputFiles string) func(*UserListConfig) {
 	return func(config *UserListConfig) {
-		config.outputFiles = strings.Split(outputFiles, ",")
+		config.outputFiles = strings.Split(outputFiles, separator)
 	}
 }
 
 func WithOwnDomains(ownDomains string) func(*UserListConfig) {
 	return func(config *UserListConfig) {
-		config.ownDomains = strings.Split(ownDomains, ",")
+		config.ownDomains = strings.Split(ownDomains, separator)
 	}
 }

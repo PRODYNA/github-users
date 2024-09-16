@@ -85,7 +85,7 @@ func (c *UserListConfig) Validate() error {
 		return errors.New("Github Token is required")
 	}
 	if len(c.templateFiles) != len(c.outputFiles) {
-		return errors.New("Template and Output Files must have the same length")
+		return fmt.Errorf("Template and Output Files must have the same length: %d != %d (%v, %v)", len(c.templateFiles), len(c.outputFiles), c.templateFiles, c.outputFiles)
 	}
 
 	c.validated = true
